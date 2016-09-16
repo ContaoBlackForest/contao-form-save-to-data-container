@@ -171,7 +171,7 @@ abstract class AbstractFormDataProviderController
         }
 
         Input::setPost('FORM_SUBMIT', $this->getName());
-        Input::setPost('FORM_FIELDS', array($GLOBALS['TL_DCA']['tl_member']['palettes']['default']));
+        Input::setPost('FORM_FIELDS', array($GLOBALS['TL_DCA'][$this->getName()]['palettes']['default']));
 
         $this->getDataContainer()->create($this->getSubmitData());
     }
