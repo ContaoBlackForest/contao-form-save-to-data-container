@@ -17,6 +17,7 @@ use Contao\Database;
 use Contao\DC_Table;
 use Contao\Form;
 use Contao\Input;
+use Contao\RequestToken;
 use ContaoBlackForest\FormSave\Event\PostPrepareSubmitDataEvent;
 use ContaoBlackForest\FormSave\Event\PrePrepareSubmitDataEvent;
 
@@ -192,6 +193,7 @@ abstract class AbstractFormDataProviderController
         }
 
         Input::setPost('FORM_SUBMIT', $this->getName());
+        Input::setPost('REQUEST_TOKEN', RequestToken::get());
         Input::setPost('FORM_FIELDS', array($GLOBALS['TL_DCA'][$this->getName()]['palettes']['default']));
 
         $this->getDataContainer()->create($this->getSubmitData());
