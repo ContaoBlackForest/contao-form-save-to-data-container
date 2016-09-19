@@ -196,7 +196,29 @@ abstract class AbstractFormDataProviderController
         Input::setPost('REQUEST_TOKEN', RequestToken::get());
         Input::setPost('FORM_FIELDS', array($GLOBALS['TL_DCA'][$this->getName()]['palettes']['default']));
 
-        $this->getDataContainer()->create($this->getSubmitData());
+        if ($sessionController->getState() === 'create') {
+            $sessionController->setState('edit');
+
+            $this->getDataContainer()->create($this->getSubmitData());
+        }
+
+        if ($sessionController->getState() === 'edit') {
+            $sessionController->setState('saved');
+
+            if ($sessionController->getEditId()) {
+                $editId = $sessionController->getEditId();
+
+                $result = $database->prepare('SELECT * FROM ' . $this->getName() . ' WHERE id=?')
+                    ->limit(1)
+                    ->execute($editId);
+
+                foreach ($result->row() as $property => $value) {
+                    Input::setPost($property, $value);
+                }
+
+                $this->getDataContainer()->edit($editId);
+            }
+        }
 
         $sessionController->removeSession();
     }
