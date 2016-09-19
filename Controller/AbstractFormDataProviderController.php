@@ -12,6 +12,7 @@
 
 namespace ContaoBlackForest\FormSave\Controller;
 
+use Contao\Controller;
 use Contao\Database;
 use Contao\DC_Table;
 use Contao\Form;
@@ -183,6 +184,8 @@ abstract class AbstractFormDataProviderController
 
         $database           = Database::getInstance();
         $excludedProperties = $database->getFieldNames($this->getName());
+
+        Controller::loadDataContainer($this->getName());
 
         foreach ($excludedProperties as $excludedProperty) {
             $GLOBALS['TL_DCA'][$this->getName()]['fields'][$excludedProperty]['exclude'] = false;
