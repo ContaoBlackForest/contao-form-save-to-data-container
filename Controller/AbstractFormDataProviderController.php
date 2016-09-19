@@ -67,6 +67,13 @@ abstract class AbstractFormDataProviderController
     protected $fields;
 
     /**
+     * The session controller.
+     *
+     * @var SessionController $sessionController
+     */
+    protected $sessionController;
+
+    /**
      * AbstractFormDataProviderController constructor.
      *
      * @param $dataProvider string The data provider name.
@@ -75,6 +82,7 @@ abstract class AbstractFormDataProviderController
     {
         $this->dataProvider = $dataProvider;
         $this->setDataContainer();
+        $this->sessionController = new SessionController();
     }
 
     /**
@@ -143,6 +151,12 @@ abstract class AbstractFormDataProviderController
      */
     public function process()
     {
+        $sessionController = $this->getSessionController();
+
+        if ($sessionController->getState() !== 'create') {
+            $this->save();
+        }
+
         global $container;
 
         $eventDispatcher = $container['event-dispatcher'];
@@ -152,6 +166,8 @@ abstract class AbstractFormDataProviderController
 
         $postPrepareSubmitDataEvent = new PostPrepareSubmitDataEvent($eventDispatcher, $this->getName(), $this);
         $eventDispatcher->dispatch(PostPrepareSubmitDataEvent::NAME, $postPrepareSubmitDataEvent);
+
+        $sessionController->setSubmitData($this->getSubmitData());
 
         $this->save();
     }
@@ -163,6 +179,8 @@ abstract class AbstractFormDataProviderController
      */
     protected function save()
     {
+        $sessionController = $this->getSessionController();
+
         $database           = Database::getInstance();
         $excludedProperties = $database->getFieldNames($this->getName());
 
@@ -174,6 +192,8 @@ abstract class AbstractFormDataProviderController
         Input::setPost('FORM_FIELDS', array($GLOBALS['TL_DCA'][$this->getName()]['palettes']['default']));
 
         $this->getDataContainer()->create($this->getSubmitData());
+
+        $sessionController->removeSession();
     }
 
     /**
@@ -226,5 +246,15 @@ abstract class AbstractFormDataProviderController
     public function getFields()
     {
         return $this->fields;
+    }
+
+    /**
+     * Return the session.
+     *
+     * @return SessionController The session.
+     */
+    public function getSessionController()
+    {
+        return $this->sessionController;
     }
 }

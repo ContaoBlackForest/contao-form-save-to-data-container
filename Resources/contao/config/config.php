@@ -15,3 +15,10 @@
  */
 $GLOBALS['TL_HOOKS']['prepareFormData'][] =
     array('ContaoBlackForest\FormSave\Controller\FormController', 'prepareFormData');
+
+
+/**
+ * Handle the redirect after create with data container.
+ */
+$GLOBALS['TL_HOOKS']['initializeSystem'][] =
+    array('ContaoBlackForest\FormSave\Controller\FormController', 'initializeSystem');
