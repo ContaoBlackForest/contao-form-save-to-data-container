@@ -14,6 +14,8 @@ namespace ContaoBlackForest\FormSave\Controller;
 
 use Contao\Controller;
 use Contao\Form;
+use Contao\Input;
+use Contao\RequestToken;
 use ContaoBlackForest\FormSave\Event\GetFormDataControllerEvent;
 
 /**
@@ -68,5 +70,47 @@ class FormController
 
         $form->storeValues = null;
         $form->targetTable = null;
+    }
+
+    /**
+     * Handle the redirect after create with data container.
+     *
+     * @return void
+     */
+    public function initializeSystem()
+    {
+        if (TL_MODE !== 'FE') {
+            return;
+        }
+
+        $sessionController = new SessionController();
+        if ($sessionController->getEditId()
+            || $sessionController->getState() === 'is_edit'
+        ) {
+            Input::setPost('FORM_SUBMIT', $sessionController->getPostFormSubmit());
+        }
+
+        if (!Input::get('act')
+            || !Input::get('id')
+            || !Input::get('s2e')
+        ) {
+            if ($sessionController->getState() === 'edit'
+                && !$sessionController->getEditId()
+            ) {
+                $sessionController->removeSession();
+            }
+
+            if ($sessionController->getState() === 'edit') {
+                Input::setPost('REQUEST_TOKEN', RequestToken::get());
+            }
+
+            return;
+        }
+
+        if ($sessionController->getState() !== 'edit') {
+            return;
+        }
+
+        Controller::redirect($sessionController->getFormPage());
     }
 }
