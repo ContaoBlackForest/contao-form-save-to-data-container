@@ -13,6 +13,7 @@
 namespace ContaoBlackForest\FormSave\Subscriber;
 
 use Contao\Database;
+use Contao\FilesModel;
 use ContaoBlackForest\FormSave\Event\PostPrepareSubmitDataEvent;
 use ContaoBlackForest\FormSave\Event\PrePrepareSubmitDataEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -44,7 +45,8 @@ class PrepareSubmitData implements EventSubscriberInterface
     {
         return array(
             PrePrepareSubmitDataEvent::NAME => array(
-                array('validateAllowedProperties', 999)
+                array('validateAllowedProperties', 999),
+                array('prepareUploadProperties', 999)
             ),
 
             PostPrepareSubmitDataEvent::NAME => array(
@@ -95,6 +97,44 @@ class PrepareSubmitData implements EventSubscriberInterface
 
         $submitData['author'] = $model->author;
         $submitData['pid']    = $model->news_archive;
+
+        $controller->setSubmitData($submitData);
+    }
+
+    /**
+     * Prepare upload properties.
+     *
+     * @param PrePrepareSubmitDataEvent $event The event.
+     *
+     * @return void
+     */
+    public function prepareUploadProperties(PrePrepareSubmitDataEvent $event)
+    {
+        $controller = $event->getController();
+        $submitData = $controller->getSubmitData();
+        $fields     = $controller->getFields();
+
+        foreach ($fields as $field) {
+            if ($field->type !== 'upload' || !$field->storeFile || !array_key_exists($field->name, $_SESSION['FILES'])) {
+                continue;
+            }
+
+            $fileName = $_SESSION['FILES'][$field->name]['name'];
+
+            $uploadFolderUuid = null;
+            if ($field->uploadFolder) {
+                $uploadFolderUuid = $field->uploadFolder;
+            }
+
+            if (!$uploadFolderUuid) {
+                return;
+            }
+
+            $folder = FilesModel::findByUuid($uploadFolderUuid);
+            $file = FilesModel::findByPath($folder->path . DIRECTORY_SEPARATOR . $fileName);
+
+            $submitData[$field->name] = $file->uuid;
+        }
 
         $controller->setSubmitData($submitData);
     }
