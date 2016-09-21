@@ -11,7 +11,7 @@
  */
 
 /**
- * Prepare form data.
+ * Prepare form data for save form to data container.
  */
 $GLOBALS['TL_HOOKS']['prepareFormData'][] =
     array('ContaoBlackForest\FormSave\Controller\FormController', 'prepareFormData');

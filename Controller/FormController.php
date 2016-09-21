@@ -24,15 +24,15 @@ use ContaoBlackForest\FormSave\Event\GetFormDataControllerEvent;
 class FormController
 {
     /**
-     * Prepare the form data.
+     * Prepare form data for save form to data container.
      *
-     * @param array $submitted
+     * @param array $submitted The submit data.
      *
-     * @param array $label
+     * @param array $label     The labels.
      *
-     * @param Form  $form
+     * @param Form  $form      The form.
      *
-     * @param array $fields
+     * @param array $fields    The form fields.
      *
      * @return void
      */
