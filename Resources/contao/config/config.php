@@ -27,4 +27,4 @@ $GLOBALS['TL_HOOKS']['initializeSystem'][] =
  * Initialize on load callback for data container table.
  */
 $GLOBALS['TL_HOOKS']['loadDataContainer'][] =
-    array('ContaoBlackForest\FormSave\DataContainer\Table\BaseTable', 'initializeOnLoadCallback');
+    array('ContaoBlackForest\FormSave\DataContainer\Table\BaseTable', 'initializeDataContainerCallback');

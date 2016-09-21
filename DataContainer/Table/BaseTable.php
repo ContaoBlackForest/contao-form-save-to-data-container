@@ -13,7 +13,10 @@
 namespace ContaoBlackForest\FormSave\DataContainer\Table;
 
 use Contao\Controller;
+use Contao\Database;
+use Contao\DataContainer;
 use Contao\Input;
+use ContaoBlackForest\FormSave\Controller\SessionController;
 
 /**
  * The data container base table.
@@ -21,13 +24,27 @@ use Contao\Input;
 class BaseTable
 {
     /**
-     * Initialize on load callback for data container table.
+     * Initialize data container callback for data container table.
      *
-     * @param $dataProvider string The data provider name.
+     * @param string $dataProvider The data provider name.
      *
      * @return void
      */
-    public function initializeOnLoadCallback($dataProvider)
+    public function initializeDataContainerCallback($dataProvider)
+    {
+        $this->handleParseSessionFormData($dataProvider);
+
+        $this->handleParseEmptyTimestamp($dataProvider);
+    }
+
+    /**
+     * Handle parse session form data for data container table.
+     *
+     * @param string $dataProvider The data provider name.
+     *
+     * @return void
+     */
+    protected function handleParseSessionFormData($dataProvider)
     {
         if ($GLOBALS['TL_DCA'][$dataProvider]['config']['dataContainer'] !== 'Table'
             || !array_key_exists('FORM_DATA', $_SESSION)
@@ -55,5 +72,61 @@ class BaseTable
         unset($_SESSION['FORM_DATA']);
 
         Controller::reload();
+    }
+
+    /**
+     * Handle parse empty timestamp for data container table.
+     *
+     * @param string $dataProvider The data provider name.
+     *
+     * @return void
+     */
+    protected function handleParseEmptyTimestamp($dataProvider)
+    {
+        if ($GLOBALS['TL_DCA'][$dataProvider]['config']['dataContainer'] !== 'Table') {
+            return;
+        }
+
+        $sessionController = new SessionController();
+
+        if ($sessionController->getState() !== 'edit'
+            || !$sessionController->getSubmitData()
+        ) {
+            return;
+        }
+
+        $firstField = array_keys($sessionController->getSubmitData())[0];
+        if (!array_key_exists($firstField, $GLOBALS['TL_DCA'][$dataProvider]['fields'])) {
+            return;
+        }
+
+        $GLOBALS['TL_DCA'][$dataProvider]['fields'][$firstField]['save_callback'][] =
+            array(__CLASS__, 'parseEmptyTimestamp');
+    }
+
+    /**
+     * Parse empty timestamp value after save the form.
+     *
+     * @param  mixed        $value
+     *
+     * @param DataContainer $dc The data container.
+     *
+     * @return mixed
+     */
+    public function parseEmptyTimestamp($value, DataContainer $dataContainer)
+    {
+        $activeRecord = $dataContainer->activeRecord;
+        if (method_exists($activeRecord, 'tstamp')
+            || $activeRecord->tstamp !== '0'
+        ) {
+            return $value;
+        }
+
+        $database = Database::getInstance();
+        $database->prepare('UPDATE ' . $dataContainer->table . ' %s WHERE id=?')
+            ->set(array('tstamp' => time()))
+            ->execute($dataContainer->id);
+
+        return $value;
     }
 }
