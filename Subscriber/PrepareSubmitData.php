@@ -115,7 +115,11 @@ class PrepareSubmitData implements EventSubscriberInterface
         $fields     = $controller->getFields();
 
         foreach ($fields as $field) {
-            if ($field->type !== 'upload' || !$field->storeFile || !array_key_exists($field->name, $_SESSION['FILES'])) {
+            if ($field->type !== 'upload'
+                || !$field->storeFile
+                || !array_key_exists('FILES', $_SESSION)
+                || !array_key_exists($field->name, $_SESSION['FILES'])
+            ) {
                 continue;
             }
 
