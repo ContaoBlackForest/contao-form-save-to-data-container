@@ -192,9 +192,13 @@ abstract class AbstractFormDataProviderController
             $GLOBALS['TL_DCA'][$this->getName()]['fields'][$excludedProperty]['exclude'] = false;
         }
 
+        $result = $database->prepare('SELECT * FROM ' . $this->getName() . ' WHERE id=?')
+            ->limit(1)
+            ->execute($sessionController->getEditId());
+
         Input::setPost('FORM_SUBMIT', $this->getName());
         Input::setPost('REQUEST_TOKEN', RequestToken::get());
-        Input::setPost('FORM_FIELDS', array($GLOBALS['TL_DCA'][$this->getName()]['palettes']['default']));
+        Input::setPost('FORM_FIELDS', $this->prepareFormFields($result, $this->getDataContainer()));
 
         if ($sessionController->getState() === 'create') {
             $sessionController->setState('edit');
@@ -206,12 +210,6 @@ abstract class AbstractFormDataProviderController
             $sessionController->setState('saved');
 
             if ($sessionController->getEditId()) {
-                $editId = $sessionController->getEditId();
-
-                $result = $database->prepare('SELECT * FROM ' . $this->getName() . ' WHERE id=?')
-                    ->limit(1)
-                    ->execute($editId);
-
                 foreach ($result->row() as $property => $value) {
                     Input::setPost($property, $value);
                 }
@@ -283,5 +281,25 @@ abstract class AbstractFormDataProviderController
     public function getSessionController()
     {
         return $this->sessionController;
+    }
+
+    /**
+     * Prepare form fields form dc table.
+     *
+     * @param Database\Result $result        The member result.
+     *
+     * @param DC_Table        $dataContainer The data container.
+     *
+     * @return array The form fields.
+     */
+    protected function prepareFormFields($result, DC_Table $dataContainer)
+    {
+        if ($result->id) {
+            $dataContainer->id = $result->id;
+        }
+
+        $formFields = $dataContainer->getPalette();
+
+        return (array) $formFields;
     }
 }
