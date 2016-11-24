@@ -15,9 +15,11 @@ namespace ContaoBlackForest\FormSave\Controller;
 use Contao\Controller;
 use Contao\Database;
 use Contao\DC_Table;
+use Contao\FilesModel;
 use Contao\Form;
 use Contao\Input;
 use Contao\RequestToken;
+use Contao\StringUtil;
 use ContaoBlackForest\FormSave\Event\PostPrepareSubmitDataEvent;
 use ContaoBlackForest\FormSave\Event\PrePrepareSubmitDataEvent;
 
@@ -211,10 +213,15 @@ abstract class AbstractFormDataProviderController
 
             if ($sessionController->getEditId()) {
                 foreach ($result->row() as $property => $value) {
+                    $fileModel = FilesModel::findByUuid($value);
+                    if ($fileModel) {
+                        $value = StringUtil::binToUuid($value);
+                    }
+
                     Input::setPost($property, $value);
                 }
 
-                $this->getDataContainer()->edit($editId);
+                $this->getDataContainer()->edit($sessionController->getEditId());
             }
         }
 
