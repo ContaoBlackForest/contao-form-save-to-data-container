@@ -12,6 +12,7 @@
 
 namespace ContaoBlackForest\FormSave\Controller;
 
+use Contao\BackendUser;
 use Contao\Controller;
 use Contao\Database;
 use Contao\DC_Table;
@@ -198,9 +199,20 @@ abstract class AbstractFormDataProviderController
             ->limit(1)
             ->execute($sessionController->getEditId());
 
+        $submitData = $sessionController->getSubmitData();
+
+        if ($result->count() > 0) {
+            Input::setGet('id', $result->id);
+
+            $backendUser        = BackendUser::getInstance();
+            $backendUser->admin = true;
+
+            $this->setDataContainer();
+        }
+
         Input::setPost('FORM_SUBMIT', $this->getName());
         Input::setPost('REQUEST_TOKEN', RequestToken::get());
-        Input::setPost('FORM_FIELDS', $this->prepareFormFields($result, $this->getDataContainer()));
+        Input::setPost('FORM_FIELDS', $this->prepareFormFields($this->getDataContainer()));
 
         if ($sessionController->getState() === 'create') {
             $sessionController->setState('edit');
@@ -293,18 +305,12 @@ abstract class AbstractFormDataProviderController
     /**
      * Prepare form fields form dc table.
      *
-     * @param Database\Result $result        The member result.
-     *
-     * @param DC_Table        $dataContainer The data container.
+     * @param DC_Table $dataContainer The data container.
      *
      * @return array The form fields.
      */
-    protected function prepareFormFields($result, DC_Table $dataContainer)
+    protected function prepareFormFields(DC_Table $dataContainer)
     {
-        if ($result->id) {
-            $dataContainer->id = $result->id;
-        }
-
         $formFields = $dataContainer->getPalette();
 
         return (array) $formFields;
