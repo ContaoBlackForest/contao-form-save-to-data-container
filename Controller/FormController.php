@@ -84,6 +84,7 @@ class FormController
         }
 
         $sessionController = new SessionController();
+
         if ($sessionController->getEditId()
             || $sessionController->getState() === 'is_edit'
         ) {
@@ -95,19 +96,19 @@ class FormController
             || !Input::get('s2e')
         ) {
             if ($sessionController->getState() === 'edit'
-                && !$sessionController->getEditId()
+                 && !$sessionController->getEditId()
             ) {
                 $sessionController->removeSession();
             }
 
-            if ($sessionController->getState() === 'edit') {
+            if (in_array($sessionController->getState(), array('edit', 'saved'))) {
                 Input::setPost('REQUEST_TOKEN', RequestToken::get());
             }
 
             return;
         }
 
-        if ($sessionController->getState() !== 'edit') {
+        if (!in_array($sessionController->getState(), array('edit', 'saved'))) {
             return;
         }
 

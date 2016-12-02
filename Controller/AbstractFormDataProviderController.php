@@ -13,8 +13,10 @@
 namespace ContaoBlackForest\FormSave\Controller;
 
 use Contao\BackendUser;
+use Contao\Config;
 use Contao\Controller;
 use Contao\Database;
+use Contao\Date;
 use Contao\DC_Table;
 use Contao\FilesModel;
 use Contao\Form;
@@ -158,6 +160,12 @@ abstract class AbstractFormDataProviderController
     {
         $sessionController = $this->getSessionController();
 
+        if ($sessionController->getState() === 'jumpTo') {
+            $sessionController->removeSession();
+
+            return;
+        }
+
         if ($sessionController->getState() !== 'create') {
             $this->save();
         }
@@ -186,6 +194,9 @@ abstract class AbstractFormDataProviderController
     {
         $sessionController = $this->getSessionController();
 
+        #$sessionController->removeSession();
+        #return;
+
         $database           = Database::getInstance();
         $excludedProperties = $database->getFieldNames($this->getName());
 
@@ -201,6 +212,30 @@ abstract class AbstractFormDataProviderController
 
         $submitData = $sessionController->getSubmitData();
 
+        $saveStatus = false;
+        foreach ($submitData as $property => $value) {
+            if ($result->{$property} !== $value) {
+                $saveStatus = true;
+            }
+
+
+            $propertyField = $GLOBALS['TL_DCA'][$this->getName()]['fields'][$property];
+
+            if (array_key_exists('eval', $propertyField)
+                && array_key_exists('rgxp', $propertyField['eval'])
+                && in_array($propertyField['eval']['rgxp'], array('date', 'time', 'datim'))
+            ) {
+                $value = Date::parse(Config::get($propertyField['eval']['rgxp'] . 'Format'), $value);
+            }
+
+            $fileModel = FilesModel::findByUuid($value);
+            if ($fileModel) {
+                $value = StringUtil::binToUuid($value);
+            }
+
+            Input::setPost($property, $value);
+        }
+
         if ($result->count() > 0) {
             Input::setGet('id', $result->id);
 
@@ -208,7 +243,12 @@ abstract class AbstractFormDataProviderController
             $backendUser->admin = true;
 
             $this->setDataContainer();
+
+            if ($result->alias) {
+                Input::setPost('alias', $result->alias);
+            }
         }
+
 
         Input::setPost('FORM_SUBMIT', $this->getName());
         Input::setPost('REQUEST_TOKEN', RequestToken::get());
@@ -221,20 +261,19 @@ abstract class AbstractFormDataProviderController
         }
 
         if ($sessionController->getState() === 'edit') {
-            $sessionController->setState('saved');
-
-            if ($sessionController->getEditId()) {
-                foreach ($result->row() as $property => $value) {
-                    $fileModel = FilesModel::findByUuid($value);
-                    if ($fileModel) {
-                        $value = StringUtil::binToUuid($value);
-                    }
-
-                    Input::setPost($property, $value);
-                }
-
-                $this->getDataContainer()->edit($sessionController->getEditId());
+            if ($saveStatus) {
+                $sessionController->setState('edit');
+            } else {
+                $sessionController->setState('saved');
             }
+
+            $this->getDataContainer()->edit($sessionController->getEditId());
+        }
+
+        if ($sessionController->getState() === 'saved') {
+            $sessionController->setState('jumpTo');
+
+            return;
         }
 
         $sessionController->removeSession();
