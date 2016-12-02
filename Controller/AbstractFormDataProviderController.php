@@ -12,12 +12,17 @@
 
 namespace ContaoBlackForest\FormSave\Controller;
 
+use Contao\BackendUser;
+use Contao\Config;
 use Contao\Controller;
 use Contao\Database;
+use Contao\Date;
 use Contao\DC_Table;
+use Contao\FilesModel;
 use Contao\Form;
 use Contao\Input;
 use Contao\RequestToken;
+use Contao\StringUtil;
 use ContaoBlackForest\FormSave\Event\PostPrepareSubmitDataEvent;
 use ContaoBlackForest\FormSave\Event\PrePrepareSubmitDataEvent;
 
@@ -155,6 +160,12 @@ abstract class AbstractFormDataProviderController
     {
         $sessionController = $this->getSessionController();
 
+        if ($sessionController->getState() === 'jumpTo') {
+            $sessionController->removeSession();
+
+            return;
+        }
+
         if ($sessionController->getState() !== 'create') {
             $this->save();
         }
@@ -183,6 +194,9 @@ abstract class AbstractFormDataProviderController
     {
         $sessionController = $this->getSessionController();
 
+        #$sessionController->removeSession();
+        #return;
+
         $database           = Database::getInstance();
         $excludedProperties = $database->getFieldNames($this->getName());
 
@@ -192,9 +206,53 @@ abstract class AbstractFormDataProviderController
             $GLOBALS['TL_DCA'][$this->getName()]['fields'][$excludedProperty]['exclude'] = false;
         }
 
+        $result = $database->prepare('SELECT * FROM ' . $this->getName() . ' WHERE id=?')
+            ->limit(1)
+            ->execute($sessionController->getEditId());
+
+        $submitData = $sessionController->getSubmitData();
+
+        $saveStatus = false;
+        foreach ($submitData as $property => $value) {
+            if ($result->{$property} !== $value) {
+                $saveStatus = true;
+            }
+
+
+            $propertyField = $GLOBALS['TL_DCA'][$this->getName()]['fields'][$property];
+
+            if (array_key_exists('eval', $propertyField)
+                && array_key_exists('rgxp', $propertyField['eval'])
+                && in_array($propertyField['eval']['rgxp'], array('date', 'time', 'datim'))
+            ) {
+                $value = Date::parse(Config::get($propertyField['eval']['rgxp'] . 'Format'), $value);
+            }
+
+            $fileModel = FilesModel::findByUuid($value);
+            if ($fileModel) {
+                $value = StringUtil::binToUuid($value);
+            }
+
+            Input::setPost($property, $value);
+        }
+
+        if ($result->count() > 0) {
+            Input::setGet('id', $result->id);
+
+            $backendUser        = BackendUser::getInstance();
+            $backendUser->admin = true;
+
+            $this->setDataContainer();
+
+            if ($result->alias) {
+                Input::setPost('alias', $result->alias);
+            }
+        }
+
+
         Input::setPost('FORM_SUBMIT', $this->getName());
         Input::setPost('REQUEST_TOKEN', RequestToken::get());
-        Input::setPost('FORM_FIELDS', array($GLOBALS['TL_DCA'][$this->getName()]['palettes']['default']));
+        Input::setPost('FORM_FIELDS', $this->prepareFormFields($this->getDataContainer()));
 
         if ($sessionController->getState() === 'create') {
             $sessionController->setState('edit');
@@ -203,21 +261,19 @@ abstract class AbstractFormDataProviderController
         }
 
         if ($sessionController->getState() === 'edit') {
-            $sessionController->setState('saved');
-
-            if ($sessionController->getEditId()) {
-                $editId = $sessionController->getEditId();
-
-                $result = $database->prepare('SELECT * FROM ' . $this->getName() . ' WHERE id=?')
-                    ->limit(1)
-                    ->execute($editId);
-
-                foreach ($result->row() as $property => $value) {
-                    Input::setPost($property, $value);
-                }
-
-                $this->getDataContainer()->edit($editId);
+            if ($saveStatus) {
+                $sessionController->setState('edit');
+            } else {
+                $sessionController->setState('saved');
             }
+
+            $this->getDataContainer()->edit($sessionController->getEditId());
+        }
+
+        if ($sessionController->getState() === 'saved') {
+            $sessionController->setState('jumpTo');
+
+            return;
         }
 
         $sessionController->removeSession();
@@ -283,5 +339,19 @@ abstract class AbstractFormDataProviderController
     public function getSessionController()
     {
         return $this->sessionController;
+    }
+
+    /**
+     * Prepare form fields form dc table.
+     *
+     * @param DC_Table $dataContainer The data container.
+     *
+     * @return array The form fields.
+     */
+    protected function prepareFormFields(DC_Table $dataContainer)
+    {
+        $formFields = $dataContainer->getPalette();
+
+        return (array) $formFields;
     }
 }

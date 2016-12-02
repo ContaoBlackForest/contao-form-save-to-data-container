@@ -12,6 +12,7 @@
 
 namespace ContaoBlackForest\FormSave\Controller;
 
+use Contao\Database\Result;
 use Contao\Environment;
 use Contao\Input;
 use Contao\Session;
@@ -45,7 +46,7 @@ class SessionController
             $this->setPostFormSubmit(Input::post('FORM_SUBMIT'));
         }
 
-        if ($this->getState() === 'edit'
+        if (in_array($this->getState(), array('edit', 'saved'))
             && Input::get('id')
         ) {
             $this->setEditId(Input::get('id'));
@@ -219,7 +220,11 @@ class SessionController
     {
         $this->getSession()->remove(self::SESSION_NAME);
 
-        unset($_SESSION['FE_DATA'][self::SESSION_NAME]);
+        unset(
+            $_SESSION['FE_DATA'][self::SESSION_NAME],
+            $_SESSION['FORM_DATA'],
+            $_POST
+        );
     }
 }
 
