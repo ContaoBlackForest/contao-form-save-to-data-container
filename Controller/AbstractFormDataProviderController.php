@@ -247,6 +247,10 @@ abstract class AbstractFormDataProviderController
             if ($result->alias) {
                 Input::setPost('alias', $result->alias);
             }
+
+            if (!empty($GLOBALS['TL_DCA'][$this->getName()]['config']['enableVersioning'])) {
+                unset($GLOBALS['TL_DCA'][$this->getName()]['config']['enableVersioning']);
+            }
         }
 
 
