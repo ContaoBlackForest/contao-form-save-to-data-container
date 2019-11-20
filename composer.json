@@ -6,20 +6,15 @@
         "frontend",
         "form",
         "save",
-        "module"
+        "news",
+        "bundle"
     ],
-    "type": "contao-module",
-    "license": "LGPL-3.0",
+    "type": "contao-bundle",
+    "license": "LGPL-3.0-or-later",
     "authors": [
         {
             "name": "Sven Baumann",
             "email": "baumann.sv@gmail.com",
-            "homepage": "https://github.com/ContaoBlackforest",
-            "role": "Developer"
-        },
-        {
-            "name": "Dominik Tomasi",
-            "email": "dominik.tomasi@gmail.com",
             "homepage": "https://github.com/ContaoBlackforest",
             "role": "Developer"
         }
@@ -32,15 +27,18 @@
         "source": "https://github.com/ContaoBlackforest/contao-form-save-to-data-container"
     },
     "require": {
-        "php": ">=5.4",
-        "contao/core": ">=3.5,<3.6",
-        "contao-community-alliance/composer-plugin": "~2.0",
-        "contao-community-alliance/event-dispatcher": "~1.0",
-        "contao-community-alliance/meta-palettes": "~1.9"
+        "php": "^7.1",
+        "contao/core-bundle": "^4.4",
+        "doctrine/dbal": "^2.9",
+        "symfony/dependency-injection": "^3.4 || ^4.3",
+        "symfony/event-dispatcher": "^3.4 || ^4.3",
+        "symfony/http-foundation": "^3.4 || ^4.3",
+        "ext-pdo": "*"
     },
-    "require-dev": {},
-    "minimum-stability": "dev",
-    "prefer-stable": true,
+    "require-dev": {
+        "contao/manager-plugin": "^2.7",
+        "contao/news-bundle": "^4.4"
+    },
     "autoload": {
         "psr-4": {
             "ContaoBlackForest\\FormSave\\": ""
@@ -53,7 +51,7 @@
             }
         },
         "branch-alias": {
-            "dev-develop": "1.0.x-dev"
+            "dev-release/2.0.0": "2.0.x-dev"
         }
     }
 }
