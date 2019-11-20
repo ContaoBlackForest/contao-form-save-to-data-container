@@ -41,7 +41,8 @@
     },
     "autoload": {
         "psr-4": {
-            "ContaoBlackForest\\FormSave\\": "legacy"
+            "ContaoBlackForest\\FormSave\\": "legacy",
+            "ContaoBlackForest\\FormSaveBundle\\": "src"
         }
     },
     "extra": {
