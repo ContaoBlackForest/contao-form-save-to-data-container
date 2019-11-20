@@ -46,11 +46,7 @@
         }
     },
     "extra": {
-        "contao": {
-            "sources": {
-                "Resources/contao": "system/modules/form-save-to-data-container"
-            }
-        },
+        "contao-manager-plugin": "ContaoBlackForest\\FormSaveBundle\\ContaoManager\\Plugin",
         "branch-alias": {
             "dev-release/2.0.0": "2.0.x-dev"
         }
