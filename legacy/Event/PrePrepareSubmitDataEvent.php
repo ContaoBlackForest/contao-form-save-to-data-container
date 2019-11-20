@@ -1,13 +1,20 @@
 <?php
 
 /**
- * Copyright © ContaoBlackForest
+ * This file is part of contaoblackforest/contao-form-save-to-data-container.
  *
- * @package   contao-form-save-to-data-container
- * @author    Sven Baumann <baumann.sv@gmail.com>
- * @author    Dominik Tomasi <dominik.tomasi@gmail.com>
- * @license   GNU/LGPL
- * @copyright Copyright 2014-2016 ContaoBlackForest
+ * (c) 2016-2019 The Contao Blackforest team.
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ *
+ * This project is provided in good faith and hope to be usable by anyone.
+ *
+ * @package    contaoblackforest/contao-form-save-to-data-container
+ * @author     Sven Baumann <baumann.sv@gmail.com>
+ * @copyright  20116-2019 The Contao Blackforest team.
+ * @license    https://github.com/contaoblackforest/contao-form-save-to-data-container/blob/master/LICENSE LGPL-3.0-or-later
+ * @filesource
  */
 
 namespace ContaoBlackForest\FormSave\Event;
